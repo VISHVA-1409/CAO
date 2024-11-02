@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Division Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Binary Division Calculator</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="dividend">Dividend (Binary):</label>
+                <input type="text" id="dividend" placeholder="Enter binary number">
+            </div>
+            
+            <div class="input-group">
+                <label for="divisor">Divisor (Binary):</label>
+                <input type="text" id="divisor" placeholder="Enter binary number">
+            </div>
+            
+            <button onclick="performDivision()">Calculate</button>
+        </div>
+
+        <div id="error" class="error"></div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function isBinary(str) {
+            return /^[01]+$/.test(str);
+        }
+
+        function binaryToDecimal(binary) {
+            return parseInt(binary, 2);
+        }
+
+        function decimalToBinary(decimal) {
+            return decimal.toString(2);
+        }
+
+        function longDivisionSteps(dividend, divisor) {
+            let steps = [];
+            let quotient = '';
+            let currentDividend = '';
+            let dividendArray = dividend.split('');
+            
+            while (dividendArray.length > 0) {
+                currentDividend += dividendArray.shift();
+                let workingDividend = binaryToDecimal(currentDividend);
+                let divisorDecimal = binaryToDecimal(divisor);
+                let stepDetail = { step: steps.length + 1, current: currentDividend, quotient: '', action: '' };
+
+                if (workingDividend >= divisorDecimal) {
+                    let remainder = workingDividend - divisorDecimal;
+                    quotient += '1';
+                    currentDividend = decimalToBinary(remainder);
+                    stepDetail.quotient = quotient;
+                    stepDetail.action = `Subtract: ${decimalToBinary(workingDividend)} - ${divisor} = ${currentDividend}`;
+                } else {
+                    quotient += '0';
+                    stepDetail.quotient = quotient;
+                    stepDetail.action = `${divisor} is greater than ${currentDividend}: Add 0 to quotient`;
+                }
+
+                steps.push(stepDetail);
+            }
+
+            return {
+                quotient: quotient,
+                remainder: currentDividend,
+                steps: steps
+            };
+        }
+
+        function performDivision() {
+            const dividendInput = document.getElementById('dividend').value.trim();
+            const divisorInput = document.getElementById('divisor').value.trim();
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            errorDiv.textContent = '';
+            resultDiv.innerHTML = '';
+
+            if (!dividendInput || !divisorInput) {
+                errorDiv.textContent = 'Please enter both dividend and divisor';
+                return;
+            }
+
+            if (!isBinary(dividendInput) || !isBinary(divisorInput)) {
+                errorDiv.textContent = 'Please enter valid binary numbers (0s and 1s only)';
+                return;
+            }
+
+            if (divisorInput === '0') {
+                errorDiv.textContent = 'Cannot divide by zero';
+                return;
+            }
+
+            const result = longDivisionSteps(dividendInput, divisorInput);
+
+            let html = `<h3>Division Steps:</h3>`;
+            html += `<p>Dividend: ${dividendInput}</p>`;
+            html += `<p>Divisor: ${divisorInput}</p>`;
+            html += `<table><tr><th>Step</th><th>Current Dividend</th><th>Quotient</th><th>Action</th></tr>`;
+            
+            result.steps.forEach(step => {
+                html += `<tr><td>${step.step}</td><td>${step.current}</td><td>${step.quotient}</td><td>${step.action}</td></tr>`;
+            });
+            html += `</table>`;
+
+            html += `<h3>Final Result:</h3>`;
+            html += `<p>Quotient: ${result.quotient}</p>`;
+            html += `<p>Remainder: ${result.remainder}</p>`;
+            html += `<p>Decimal equivalent: ${binaryToDecimal(dividendInput)} ÷ ${binaryToDecimal(divisorInput)} = ${binaryToDecimal(result.quotient)} remainder ${binaryToDecimal(result.remainder)}</p>`;
+
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
